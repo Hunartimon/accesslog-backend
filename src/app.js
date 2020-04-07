@@ -3,12 +3,13 @@ const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const readData = require('./dataReader').readData
+const cors = require('cors')
+const dataReader = require('./dataReader')
 const accessData = require('./route/accessDataRoute')
 
 const app = express();
 const NODE_PORT = process.env.NODE_PORT || 3001
-
+app.use(cors())
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -30,6 +31,15 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
 });
 
-app.listen(NODE_PORT, () => {
-  console.info(`Server is listening on port ${NODE_PORT}`);
-});
+const start = async () => {
+  try {
+    await dataReader.createJSON(path.resolve(__dirname, 'res', 'epa-http.txt'), path.resolve(__dirname, 'res', 'epa-http.json'))
+    app.listen(NODE_PORT, () => {
+      console.info(`Server is listening on port ${NODE_PORT}`);
+    });
+  } catch (err) {
+    console.log('Couldn\'t initiate server.', err)
+  }
+}
+
+start()
