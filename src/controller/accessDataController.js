@@ -1,10 +1,5 @@
-const redis = require('redis')
-const { promisify } = require('util')
 const path = require('path');
 const dataReader = require('../dataReader')
-const client = redis.createClient()
-const redisGet = promisify(client.get).bind(client)
-const redisSetex = promisify(client.setex).bind(client)
 
 const formatData  = (data) => {
   const requestPerMinute = data.reduce((prev, curr) => {
@@ -56,21 +51,8 @@ const formatData  = (data) => {
 exports.getDistribution = async (req, res, next) => {
   try {
     const fileName = 'epa-http.json'
-    let result
-    try {
-      result = await redisGet(fileName);
-    } catch (err) {
-      console.log('Redis server not reachable')
-    }
-    let resp;
-    if (result) {
-      resp = JSON.parse(result)
-    } else {
-      const data = await dataReader.readData(path.resolve(__dirname, '..', 'res', fileName));
-      await redisSetex(fileName, 3600, JSON.stringify(data))
-      resp = data
-    }
-    res.json(formatData(resp))
+    const data = await dataReader.readData(path.resolve(__dirname, '..', 'res', fileName));  
+    res.json(formatData(data))
   } catch (err) {
     throw err
   }
